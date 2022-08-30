@@ -1,10 +1,9 @@
-name: Container
+name: Goreleaser
+
 on:
-  pull_request:
   push:
-    branches:
-      - 'release-*'
-      - 'main'
+    tags:
+      - v*
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
@@ -14,6 +13,9 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   GORELEASER_VERSION: v1.10.3
+
+permissions:
+  contents: write
 
 jobs:
   build-binary:
@@ -36,12 +38,14 @@ jobs:
         with:
           node-version-file: .node-version
 
-      - name: Build binaries
+      - name: Build and release binaries
         uses: goreleaser/goreleaser-action@v3
         with:
           distribution: goreleaser
           version: ${{ env.GORELEASER_VERSION }}
-          args: build --rm-dist --skip-validate --snapshot --debug
+          args: release --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Archive generated artifacts
         uses: actions/upload-artifact@v3
